@@ -89,7 +89,7 @@ Include in your output the name of the court, and the name of the member
 formatted as a single column. Ensure no duplicate data, and order by
 the member name. */
 
-SELECT DISTINCT(m.firstname ||'  ' || m.surname) AS member_name, 
+SELECT DISTINCT memid, (m.firstname ||'  ' || m.surname) AS member_name, 
                  f.name AS court_name
 FROM Members AS m 
            INNER JOIN Bookings AS b 
@@ -99,7 +99,6 @@ FROM Members AS m
 WHERE f.name LIKE 'Tennis Court%'		 
 ORDER BY member_name;
 
-
 /* Q8: Produce a list of bookings on the day of 2012-09-14 which
 will cost the member (or guest) more than $30. Remember that guests have
 different costs to members (the listed costs are per half-hour 'slot'), and
@@ -107,7 +106,7 @@ the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 
-SELECT f.name AS facility_name,
+SELECT bookid, f.name AS facility_name,
                 (m.firstname ||'  ' || m.surname) AS member_name,
 				CASE WHEN memid = 0 THEN 2*guestcost*slots
 				            ELSE 2*membercost*slots
@@ -125,11 +124,11 @@ ORDER BY cost DESC
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 
-SELECT facility_name, 
+SELECT bookid, facility_name, 
                (m.firstname ||'  ' || m.surname) AS member_name,
 			   cost
 FROM Members AS m,
-          (SELECT memid, f.name AS facility_name, 
+          (SELECT bookid, memid, f.name AS facility_name, 
                 CASE WHEN memid = 0 THEN 2*guestcost*slots
 				            ELSE 2*membercost*slots
 				END AS cost
@@ -160,11 +159,45 @@ QUESTIONS:
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
+SELECT facility_name, SUM(cost) AS revenue
+FROM 
+(SELECT  f.name AS facility_name, 
+				CASE WHEN memid = 0 THEN 2*guestcost*slots
+				            ELSE 2*membercost*slots
+				END AS cost			
+FROM Members AS m 
+           INNER JOIN Bookings AS b 
+		   USING (memid)
+		   INNER JOIN Facilities AS f
+		   USING (facid))
+GROUP BY facility_name
+HAVING revenue < 1000
+ORDER BY revenue
+
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
+
+SELECT m1.surname AS member_surname, 
+                 m1.firstname AS member_firstname,
+                m2.surname AS recommender_surname,
+				m2.firstname AS recommendr_firstname
+FROM Members AS m1 
+              INNER JOIN Members AS m2
+			  ON m1.recommendedby = m2.memid
 
 
 /* Q12: Find the facilities with their usage by member, but not guests */
 
+SELECT facid, name
+FROM Facilities
+WHERE 
+facid NOT IN (SELECT DISTINCT facid
+FROM Bookings
+WHERE memid = 0)
+
+-- I am not sure if I understand question 12 exactly, the above SQL shows facilites which have never be used by guess.
+
 
 /* Q13: Find the facilities usage by month, but not guests */
+
+-- Question 13 seems unclear to me. I hope to have more explanation. Thank you!
 
